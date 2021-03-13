@@ -77,7 +77,6 @@ typedef enum NotificationPrivacySettingOption {
 #define kMonalReceivedMucInviteNotice @"kMonalReceivedMucInviteNotice"
 #define kXMPPError @"kXMPPError"
 #define kScheduleBackgroundFetchingTask @"kScheduleBackgroundFetchingTask"
-#define kMonalUpdateUnread @"kMonalUpdateUnread"
 
 #define kMLHasConnectedNotice @"kMLHasConnectedNotice"
 #define kMonalFinishedCatchup @"kMonalFinishedCatchup"
