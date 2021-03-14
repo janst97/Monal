@@ -95,6 +95,8 @@ removes a contact from the roster
  */
 -(void) setRosterRequest:(NSString* _Nullable) version;
 
+-(void) setMembersListQueryForMuc:(NSString* _Nonnull) room andMemberType:(NSString*) memberType;
+
 /**
  makes iq  with version element
  */

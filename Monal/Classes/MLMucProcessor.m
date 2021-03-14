@@ -407,14 +407,30 @@ $$handler(handleDiscoResponse, $_ID(xmpp*, account), $_ID(XMPPIQ*, iqNode), $_ID
             [_joining addObject:iqNode.fromUser];       //add room to "currently joining" list
             //we don't need to force saving of our new state because once this outgoing join presence gets handled by smacks the whole state will be saved
         }
+        
+        [[DataLayer sharedInstance] cleanParticipantsListOfMuc:iqNode.fromUser forAccount:account.accountNo];
+        
         NSString* nick = [[DataLayer sharedInstance] ownNickNameforMuc:iqNode.fromUser forAccount:account.accountNo];
         XMPPPresence* presence = [[XMPPPresence alloc] init];
         [presence joinRoom:iqNode.fromUser withNick:nick];
         [account send:presence];
         
         //load members list
-        //TODO: implement loading of members list (members, owner and admin list need all to be loaded separately)
+        for(NSString* memberType in @[@"member", @"admin", @"owner"])
+        {
+            DDLogDebug(@"Querying %@ list of muc %@...", memberType, iqNode.fromUser);
+            XMPPIQ* query = [[XMPPIQ alloc] initWithType:kiqGetType];
+            [query setiqTo:roomJid];
+            [query setMembersListQueryForMuc:iqNode.fromUser andMemberType:memberType];
+            [account sendIq:query withHandler:$newHandler(self, handleMembersList)];
+        }
     }
+$$
+
+$$handler(handleMembersList, $_ID(xmpp*, account), $_ID(XMPPIQ*, iqNode))
+    //ignore errors entirely (the muc members list will be build only from presences then)
+    for(NSDictionary* item in [iqNode find:@"/<type=result>/{http://jabber.org/protocol/muc#admin}query/item@@"])
+        [[DataLayer sharedInstance] addMember:item toMuc:iqNode.fromUser forAccountId:account.accountNo];
 $$
 
 $$handler(handleMamResponseWithLatestId, $_ID(xmpp*, account), $_ID(XMPPIQ*, iqNode))

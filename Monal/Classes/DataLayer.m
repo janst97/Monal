@@ -887,14 +887,17 @@ static NSDateFormatter* dbFormatter;
 
 -(void) addMember:(NSDictionary*) member toMuc:(NSString*) room forAccountId:(NSString*) accountNo
 {
-    if(!member || !member[@"nick"] || !room || !accountNo)
+    if(!member || (!member[@"nick"] && !member[@"jid"]) || !room || !accountNo)
         return;
     
     //create entry if not already existing
-    [self.db executeNonQuery:@"INSERT OR IGNORE INTO muc_participants ('account_id', 'room', 'room_nick') VALUES(?, ?, ?);" andArguments:@[accountNo, room, member[@"nick"]]];
+    if(member[@"nick"])
+        [self.db executeNonQuery:@"INSERT OR IGNORE INTO muc_participants ('account_id', 'room', 'room_nick') VALUES(?, ?, ?);" andArguments:@[accountNo, room, member[@"nick"]]];
+    else
+        [self.db executeNonQuery:@"INSERT OR IGNORE INTO muc_participants ('account_id', 'room', 'jid') VALUES(?, ?, ?);" andArguments:@[accountNo, room, member[@"jid"]]];
     
     //update entry with optional fields
-    if(member[@"jid"])
+    if(member[@"nick"] && member[@"jid"])       //if nick AND jid are given, we have to add the jid here
         [self.db executeNonQuery:@"UPDATE muc_participants SET participant_jid=? WHERE account_id=? AND room=? AND room_nick=?;" andArguments:@[member[@"jid"], accountNo, room, member[@"nick"]]];
     if(member[@"affiliation"])
         [self.db executeNonQuery:@"UPDATE muc_participants SET affiliation=? WHERE account_id=? AND room=? AND room_nick=?;" andArguments:@[member[@"affiliation"], accountNo, room, member[@"nick"]]];
@@ -904,10 +907,22 @@ static NSDateFormatter* dbFormatter;
 
 -(void) removeMember:(NSDictionary*) member fromMuc:(NSString*) room forAccountId:(NSString*) accountNo
 {
-    if(!member || !member[@"nick"] || !room || !accountNo)
+    if(!member || (!member[@"nick"] && !member[@"jid"]) || !room || !accountNo)
         return;
     
-    [self.db executeNonQuery:@"DELETE FROM muc_participants WHERE account_id=? AND room=? AND room_nick=?;" andArguments:@[accountNo, room, member[@"nick"]]];
+    //delete entry based on nick or jid (whatever is given)
+    if(member[@"nick"])
+        [self.db executeNonQuery:@"DELETE FROM muc_participants WHERE account_id=? AND room=? AND room_nick=?;" andArguments:@[accountNo, room, member[@"nick"]]];
+    else
+        [self.db executeNonQuery:@"DELETE FROM muc_participants WHERE account_id=? AND room=? AND jid=?;" andArguments:@[accountNo, room, member[@"jid"]]];
+}
+
+-(void) cleanParticipantsListOfMuc:(NSString*) room forAccountId:(NSString*) accountNo
+{
+    if(!room || !accountNo)
+        return;
+    
+    [self.db executeNonQuery:@"DELETE FROM muc_participants WHERE account_id=? AND room=?;" andArguments:@[accountNo, room]];
 }
 
 -(void) addMucFavorite:(NSString*) room forAccountId:(NSString*) accountNo andMucNick:(NSString* _Nullable) mucNick

@@ -279,6 +279,15 @@ NSString* const kiqErrorType = @"error";
     [self addChild:queryNode];
 }
 
+-(void) setMembersListQueryForMuc:(NSString* _Nonnull) room andMemberType:(NSString*) memberType
+{
+    [self addChild:[[MLXMLNode alloc] initWithElement:@"query" andNamespace:@"http://jabber.org/protocol/muc#admin" withAttributes:@{} andChildren:@[
+        [[MLXMLNode alloc] initWithElement:@"item" withAttributes:@{
+            @"affiliation": memberType
+        } andChildren:@[] andData:nil]
+    ] andData:nil]];
+}
+
 -(void) setVersion
 {
     MLXMLNode* queryNode = [[MLXMLNode alloc] init];
