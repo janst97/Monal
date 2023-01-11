@@ -739,7 +739,7 @@ static NSMutableDictionary* _typingNotifications;
             }
         }
     }
-    
+
     return message;
 }
 
